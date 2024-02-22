@@ -36,7 +36,6 @@ func GuessBallYPosition(ball Ball, endX float32) float32 {
 	for {
 		currentX += ball.SpeedX
 		currentY += ball.SpeedY
-		fmt.Printf("CurrentX: %.2f\n", currentX)
 		if currentX >= endX {
 			break
 		}
@@ -61,6 +60,12 @@ func GetYMultiplier(paddle Paddle, ball Ball) float32 {
 }
 
 func (g *Game) HandleBallCollisions() {
+	if g.Ball.X >= g.Player.X {
+		return
+	}
+	if g.Ball.X <= g.Bot.X {
+		return
+	}
 	botCollision := CheckPaddleCollision(g.Bot.Paddle, g.Ball)
 	playerCollision := CheckPaddleCollision(g.Player.Paddle, g.Ball)
 	var collidedPaddle Paddle
@@ -176,6 +181,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	text.Draw(screen, fmt.Sprint(g.Bot.Score), g.Font, 208, 36, color.White)
 	fpsText := fmt.Sprintf("FPS: %.2f", g.CurrentFPS)
 	text.Draw(screen, fpsText, g.Font, 250, 20, color.White)
+
+	vector.StrokeLine(screen, float32(SCREEN_WIDTH/2), 0, float32(SCREEN_WIDTH/2), float32(SCREEN_HEIGHT), 3, color.White, true)
 
 	vector.DrawFilledRect(screen, g.Bot.X, g.Bot.Y, g.Bot.Width, g.Bot.Height, color.RGBA{255, 255, 255, 255}, true)
 	vector.DrawFilledRect(screen, g.Ball.X, g.Ball.Y, g.Ball.Width, g.Ball.Height, color.RGBA{255, 255, 255, 255}, true)
