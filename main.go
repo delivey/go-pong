@@ -46,15 +46,9 @@ func GuessBallYPosition(ball Ball, endX float32) float32 {
 func GetYMultiplier(paddle Paddle, ball Ball) float32 {
 	var result float32
 	if ball.Y > paddle.Y {
-		result = (paddle.Y + paddle.Height/2) / 100
+		result = (paddle.Y + paddle.Height/2) / 50
 	} else {
-		result = (paddle.Y - paddle.Height/2) / -100
-	}
-	if result > 1 {
-		return 1
-	}
-	if result < -1 {
-		return -1
+		result = (paddle.Y - paddle.Height/2) / -50
 	}
 	return result
 }
@@ -84,6 +78,12 @@ func (g *Game) HandleBallCollisions() {
 		g.Ball.SpeedX *= -1
 		yMultiplier := GetYMultiplier(collidedPaddle, g.Ball)
 		g.Ball.SpeedY += yMultiplier
+		if g.Ball.SpeedY > 2 {
+			g.Ball.SpeedY = 2
+		}
+		if g.Ball.SpeedY < -2 {
+			g.Ball.SpeedY = -2
+		}
 	}
 }
 
