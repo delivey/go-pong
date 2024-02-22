@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image/color"
 	"log"
+	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
@@ -15,6 +16,7 @@ func (g *Game) Update() error {
 	g.HandleBot()
 	g.HandleBall()
 	g.HandlePlayer()
+	g.CurrentFPS = ebiten.ActualFPS()
 	return nil
 }
 
@@ -25,6 +27,20 @@ func CheckPaddleCollision(paddle Paddle, ball Ball) bool {
 	collisionY := ball.Y+ball.Height >= paddle.Y &&
 		paddle.Y+paddle.Height >= ball.Y
 	return collisionX && collisionY
+}
+
+func GuessBallYPosition(ball Ball, endX float32) float32 {
+	currentX := ball.X
+	currentY := ball.Y
+	for {
+		currentX += ball.SpeedX
+		currentY += ball.SpeedY
+		fmt.Printf("CurrentX: %.2f\n", currentX)
+		if currentX >= endX {
+			break
+		}
+	}
+	return currentY
 }
 
 func GetYMultiplier(paddle Paddle, ball Ball) float32 {
@@ -52,7 +68,6 @@ func (g *Game) HandleBallCollisions() {
 	}
 	if botCollision {
 		collidedPaddle = g.Bot.Paddle
-
 	}
 	if botCollision || playerCollision {
 		g.Ball.SpeedX *= -1
@@ -90,12 +105,7 @@ func (g *Game) HandleBall() {
 }
 
 func (g *Game) HandlePlayer() {
-	if g.Player.IsMovingUp {
-		g.Player.Y -= g.Player.Speed
-	}
-	if g.Player.IsMovingDown {
-		g.Player.Y += g.Player.Speed
-	}
+
 	if inpututil.IsKeyJustPressed(ebiten.KeyArrowUp) {
 		g.Player.IsMovingUp = true
 	}
@@ -108,22 +118,51 @@ func (g *Game) HandlePlayer() {
 	if inpututil.IsKeyJustReleased(ebiten.KeyArrowDown) {
 		g.Player.IsMovingDown = false
 	}
+	if g.Player.Y >= float32(SCREEN_HEIGHT)-g.Player.Height && g.Player.IsMovingDown {
+		return
+	}
+	if g.Player.Y <= 0 && g.Player.IsMovingUp {
+		return
+	}
+	if g.Player.IsMovingUp {
+		g.Player.Y -= g.Player.Speed
+	}
+	if g.Player.IsMovingDown {
+		g.Player.Y += g.Player.Speed
+	}
 }
 
 func (g *Game) HandleBot() {
-	if g.Bot.Y == g.Ball.Y {
+	if g.Ball.X < g.Bot.X {
 		return
 	}
-	if g.Ball.Y > g.Bot.Y {
+	if g.Ball.SpeedX > 0 {
+		return
+	}
+
+	// Predict where they ball will be and move there
+	predictedY := g.Ball.Y
+	if math.Abs(float64(predictedY-g.Bot.Y)) <= float64(g.Bot.Speed) {
+		return
+	}
+	if predictedY > g.Bot.Y {
 		g.Bot.Y += g.Bot.Speed
-	} else {
+		if g.Bot.Y >= float32(SCREEN_HEIGHT)-g.Bot.Height {
+			g.Bot.Y -= g.Bot.Speed
+		}
+	} else if predictedY < g.Bot.Y {
 		g.Bot.Y -= g.Bot.Speed
+		if g.Bot.Y <= 0 {
+			g.Bot.Y += g.Bot.Speed
+		}
 	}
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	text.Draw(screen, fmt.Sprint(g.Player.Score), g.Font, 106, 36, color.White)
 	text.Draw(screen, fmt.Sprint(g.Bot.Score), g.Font, 208, 36, color.White)
+	fpsText := fmt.Sprintf("FPS: %.2f", g.CurrentFPS)
+	text.Draw(screen, fpsText, g.Font, 250, 20, color.White)
 
 	vector.DrawFilledRect(screen, g.Bot.X, g.Bot.Y, g.Bot.Width, g.Bot.Height, color.RGBA{255, 255, 255, 255}, true)
 	vector.DrawFilledRect(screen, g.Ball.X, g.Ball.Y, g.Ball.Width, g.Ball.Height, color.RGBA{255, 255, 255, 255}, true)
@@ -139,7 +178,7 @@ func (g *Game) Init() {
 	g.Ball.Y = float32(SCREEN_HEIGHT) / 2
 	g.Ball.Width = 4.5
 	g.Ball.Height = 4.5
-	g.Ball.SpeedX = 2.5
+	g.Ball.SpeedX = 4
 	g.Ball.SpeedY = 0
 	g.IsPlayerTurn = true
 

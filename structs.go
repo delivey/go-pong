@@ -41,4 +41,5 @@ type Game struct {
 	Player       Player
 	Bot          Bot
 	Font         font.Face
+	CurrentFPS   float64
 }

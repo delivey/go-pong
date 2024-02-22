@@ -9,7 +9,7 @@ import (
 )
 
 func GetFont() font.Face {
-	fontBytes, err := os.ReadFile("./assets/Roboto-Regular.ttf")
+	fontBytes, err := os.ReadFile("./assets/roboto.ttf")
 	if err != nil {
 		log.Fatal(err)
 	}
