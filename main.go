@@ -5,6 +5,7 @@ import (
 	"image/color"
 	"log"
 	"math"
+	"math/rand"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
@@ -70,16 +71,28 @@ func (g *Game) HandleBallCollisions() {
 		collidedPaddle = g.Bot.Paddle
 	}
 	if botCollision || playerCollision {
+		if g.Ball.SpeedX > 0 {
+			g.Ball.SpeedX = 4
+		} else {
+			g.Ball.SpeedX = -4
+		}
 		g.Ball.SpeedX *= -1
 		yMultiplier := GetYMultiplier(collidedPaddle, g.Ball)
 		g.Ball.SpeedY += yMultiplier
 	}
 }
 
+func randomNumber(min, max float32) float32 {
+	return min + rand.Float32()*(max-min)
+}
+
 func (g *Game) ResetBall() {
 	g.IsPlayerTurn = !g.IsPlayerTurn
-	g.Ball.SpeedX *= -1
-	g.Ball.SpeedY = 0
+	g.Ball.SpeedX = randomNumber(1.5, 2)
+	g.Ball.SpeedY = randomNumber(-2, 2)
+	if g.IsPlayerTurn {
+		g.Ball.SpeedX *= -1
+	}
 	g.Ball.Y = float32(SCREEN_HEIGHT) / 2
 	g.Ball.X = float32(SCREEN_WIDTH) / 2
 }
@@ -195,6 +208,7 @@ func (g *Game) Init() {
 	g.Bot.Speed = 3.5
 
 	g.Font = GetFont()
+	g.ResetBall()
 }
 
 func main() {
