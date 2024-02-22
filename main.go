@@ -6,71 +6,60 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"github.com/hajimehoshi/ebiten/v2/text"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
-var SCREEN_WIDTH = 320
-var SCREEN_HEIGHT = 240
-
-type Position struct {
-	X, Y float32
-}
-
-type Ball struct {
-	Position
-	Radius float32
-}
-
-type Paddle struct {
-	Position
-	Height float32
-	Width  float32
-}
-
-type Game struct {
-	Ball         Ball
-	IsPlayerTurn bool
-	BallSpeed    float32
-	Player       Paddle
-	Bot          Paddle
-}
-
 func (g *Game) Update() error {
+	g.HandleBot()
+	g.HandleBall()
+	g.HandlePlayer()
 	return nil
 }
 
-func (g *Game) HandleBall(screen *ebiten.Image) {
+func (g *Game) HandleBall() {
 	switch g.IsPlayerTurn {
 	case true:
 		g.Ball.X -= g.BallSpeed
 	case false:
 		g.Ball.X += g.BallSpeed
 	}
+
 	if g.Ball.X > float32(SCREEN_WIDTH) || g.Ball.X < 0 {
 		g.Ball.X = float32(SCREEN_WIDTH) / 2
 		g.IsPlayerTurn = !g.IsPlayerTurn
 	}
-	vector.DrawFilledCircle(screen, g.Ball.X, g.Ball.Y, g.Ball.Radius, color.RGBA{255, 255, 255, 255}, false)
 }
 
-func (g *Game) HandlePlayer(screen *ebiten.Image) {
+func (g *Game) HandlePlayer() {
+	if g.Player.IsMovingUp {
+		g.Player.Y -= g.Player.Speed
+	}
+	if g.Player.IsMovingDown {
+		g.Player.Y += g.Player.Speed
+	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyArrowUp) {
-		g.Player.Y -= 5
+		g.Player.IsMovingUp = true
 	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyArrowDown) {
-		g.Player.Y += 5
+		g.Player.IsMovingDown = true
 	}
-	vector.DrawFilledRect(screen, g.Player.X, g.Player.Y, g.Player.Width, g.Player.Height, color.RGBA{255, 255, 255, 255}, true)
+	if inpututil.IsKeyJustReleased(ebiten.KeyArrowUp) {
+		g.Player.IsMovingUp = false
+	}
+	if inpututil.IsKeyJustReleased(ebiten.KeyArrowDown) {
+		g.Player.IsMovingDown = false
+	}
 }
 
-func (g *Game) HandleBot(screen *ebiten.Image) {
-	vector.DrawFilledRect(screen, 20, 50, 6, 30, color.RGBA{255, 255, 255, 255}, true)
+func (g *Game) HandleBot() {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	g.HandleBot(screen)
-	g.HandleBall(screen)
-	g.HandlePlayer(screen)
+	text.Draw(screen, "Hello, World!", g.Font, 12, 36, color.White)
+	vector.DrawFilledRect(screen, 20, 50, 6, 30, color.RGBA{255, 255, 255, 255}, true)
+	vector.DrawFilledCircle(screen, g.Ball.X, g.Ball.Y, g.Ball.Radius, color.RGBA{255, 255, 255, 255}, false)
+	vector.DrawFilledRect(screen, g.Player.X, g.Player.Y, g.Player.Width, g.Player.Height, color.RGBA{255, 255, 255, 255}, true)
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
@@ -88,11 +77,14 @@ func (g *Game) Init() {
 	g.Player.Y = 50
 	g.Player.Width = 6
 	g.Player.Height = 30
+	g.Player.Speed = 3.5
+
+	g.Font = GetFont()
 }
 
 func main() {
 	ebiten.SetWindowSize(960, 720)
-	ebiten.SetWindowTitle("Hello, World!")
+	ebiten.SetWindowTitle("Pong")
 	game := &Game{}
 	game.Init()
 	if err := ebiten.RunGame(game); err != nil {
