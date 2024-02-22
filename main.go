@@ -28,11 +28,19 @@ func CheckPaddleCollision(paddle Paddle, ball Ball) bool {
 }
 
 func GetYMultiplier(paddle Paddle, ball Ball) float32 {
+	var result float32
 	if ball.Y > paddle.Y {
-		return (paddle.Y + paddle.Height/2) / 100
+		result = (paddle.Y + paddle.Height/2) / 100
 	} else {
-		return (paddle.Y - paddle.Height/2) / -100
+		result = (paddle.Y - paddle.Height/2) / -100
 	}
+	if result > 1 {
+		return 1
+	}
+	if result < -1 {
+		return -1
+	}
+	return result
 }
 
 func (g *Game) HandleBallCollisions() {
@@ -103,6 +111,14 @@ func (g *Game) HandlePlayer() {
 }
 
 func (g *Game) HandleBot() {
+	if g.Bot.Y == g.Ball.Y {
+		return
+	}
+	if g.Ball.Y > g.Bot.Y {
+		g.Bot.Y += g.Bot.Speed
+	} else {
+		g.Bot.Y -= g.Bot.Speed
+	}
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
