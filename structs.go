@@ -11,7 +11,8 @@ type Position struct {
 
 type Ball struct {
 	Position
-	Radius float32
+	Width  float32
+	Height float32
 }
 
 type Paddle struct {

@@ -18,25 +18,36 @@ func (g *Game) Update() error {
 	return nil
 }
 
-func (g *Game) HandleBall() {
-	switch g.IsPlayerTurn {
-	case true:
-		g.Ball.X -= g.BallSpeed
-	case false:
-		g.Ball.X += g.BallSpeed
-	}
+func (g *Game) HandleBallCollisions() {
+	ball := g.Ball
+	player := g.Player
 
+	collisionX := ball.X+ball.Width >= player.X &&
+		player.X+player.Width >= ball.X
+
+	collisionY := ball.Y+ball.Height >= player.Y &&
+		player.Y+player.Height >= ball.Y
+	if collisionX && collisionY {
+		g.BallSpeed *= -1
+	}
+}
+
+func (g *Game) HandleBall() {
+	g.Ball.X += g.BallSpeed
+	g.HandleBallCollisions()
+	// Handle point ending
 	if g.Ball.X > float32(SCREEN_WIDTH) {
 		g.Player.Score++
 		g.IsPlayerTurn = !g.IsPlayerTurn
+		g.BallSpeed *= -1
 		g.Ball.X = float32(SCREEN_WIDTH) / 2
 	}
 	if g.Ball.X < 0 {
 		g.Bot.Score++
 		g.IsPlayerTurn = !g.IsPlayerTurn
+		g.BallSpeed *= -1
 		g.Ball.X = float32(SCREEN_WIDTH) / 2
 	}
-
 }
 
 func (g *Game) HandlePlayer() {
@@ -68,7 +79,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	text.Draw(screen, fmt.Sprint(g.Bot.Score), g.Font, 208, 36, color.White)
 
 	vector.DrawFilledRect(screen, 20, 50, 6, 30, color.RGBA{255, 255, 255, 255}, true)
-	vector.DrawFilledCircle(screen, g.Ball.X, g.Ball.Y, g.Ball.Radius, color.RGBA{255, 255, 255, 255}, false)
+	vector.DrawFilledRect(screen, g.Ball.X, g.Ball.Y, g.Ball.Width, g.Ball.Height, color.RGBA{255, 255, 255, 255}, true)
 	vector.DrawFilledRect(screen, g.Player.X, g.Player.Y, g.Player.Width, g.Player.Height, color.RGBA{255, 255, 255, 255}, true)
 }
 
@@ -79,7 +90,8 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 func (g *Game) Init() {
 	g.Ball.X = float32(SCREEN_WIDTH) / 2
 	g.Ball.Y = float32(SCREEN_HEIGHT) / 2
-	g.Ball.Radius = 3
+	g.Ball.Width = 4.5
+	g.Ball.Height = 4.5
 	g.BallSpeed = 2.5
 	g.IsPlayerTurn = true
 
