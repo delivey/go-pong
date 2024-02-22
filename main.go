@@ -18,35 +18,66 @@ func (g *Game) Update() error {
 	return nil
 }
 
-func (g *Game) HandleBallCollisions() {
-	ball := g.Ball
-	player := g.Player
+func CheckPaddleCollision(paddle Paddle, ball Ball) bool {
+	collisionX := ball.X+ball.Width >= paddle.X &&
+		paddle.X+paddle.Width >= ball.X
 
-	collisionX := ball.X+ball.Width >= player.X &&
-		player.X+player.Width >= ball.X
+	collisionY := ball.Y+ball.Height >= paddle.Y &&
+		paddle.Y+paddle.Height >= ball.Y
+	return collisionX && collisionY
+}
 
-	collisionY := ball.Y+ball.Height >= player.Y &&
-		player.Y+player.Height >= ball.Y
-	if collisionX && collisionY {
-		g.BallSpeed *= -1
+func GetYMultiplier(paddle Paddle, ball Ball) float32 {
+	if ball.Y > paddle.Y {
+		return (paddle.Y + paddle.Height/2) / 100
+	} else {
+		return (paddle.Y - paddle.Height/2) / -100
 	}
 }
 
+func (g *Game) HandleBallCollisions() {
+	botCollision := CheckPaddleCollision(g.Bot.Paddle, g.Ball)
+	playerCollision := CheckPaddleCollision(g.Player.Paddle, g.Ball)
+	var collidedPaddle Paddle
+	if playerCollision {
+		collidedPaddle = g.Player.Paddle
+	}
+	if botCollision {
+		collidedPaddle = g.Bot.Paddle
+
+	}
+	if botCollision || playerCollision {
+		g.Ball.SpeedX *= -1
+		yMultiplier := GetYMultiplier(collidedPaddle, g.Ball)
+		g.Ball.SpeedY += yMultiplier
+	}
+}
+
+func (g *Game) ResetBall() {
+	g.IsPlayerTurn = !g.IsPlayerTurn
+	g.Ball.SpeedX *= -1
+	g.Ball.SpeedY = 0
+	g.Ball.Y = float32(SCREEN_HEIGHT) / 2
+	g.Ball.X = float32(SCREEN_WIDTH) / 2
+}
+
 func (g *Game) HandleBall() {
-	g.Ball.X += g.BallSpeed
+	g.Ball.X += g.Ball.SpeedX
+	g.Ball.Y += g.Ball.SpeedY
 	g.HandleBallCollisions()
-	// Handle point ending
+	// Handle point win
 	if g.Ball.X > float32(SCREEN_WIDTH) {
 		g.Player.Score++
-		g.IsPlayerTurn = !g.IsPlayerTurn
-		g.BallSpeed *= -1
-		g.Ball.X = float32(SCREEN_WIDTH) / 2
+		g.ResetBall()
 	}
 	if g.Ball.X < 0 {
 		g.Bot.Score++
-		g.IsPlayerTurn = !g.IsPlayerTurn
-		g.BallSpeed *= -1
-		g.Ball.X = float32(SCREEN_WIDTH) / 2
+		g.ResetBall()
+	}
+
+	// Handle ball bounce
+	if g.Ball.Y+g.Ball.Height > float32(SCREEN_HEIGHT) || g.Ball.Y-g.Ball.Height < 0 {
+		g.Ball.SpeedY *= -1
 	}
 }
 
@@ -78,7 +109,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	text.Draw(screen, fmt.Sprint(g.Player.Score), g.Font, 106, 36, color.White)
 	text.Draw(screen, fmt.Sprint(g.Bot.Score), g.Font, 208, 36, color.White)
 
-	vector.DrawFilledRect(screen, 20, 50, 6, 30, color.RGBA{255, 255, 255, 255}, true)
+	vector.DrawFilledRect(screen, g.Bot.X, g.Bot.Y, g.Bot.Width, g.Bot.Height, color.RGBA{255, 255, 255, 255}, true)
 	vector.DrawFilledRect(screen, g.Ball.X, g.Ball.Y, g.Ball.Width, g.Ball.Height, color.RGBA{255, 255, 255, 255}, true)
 	vector.DrawFilledRect(screen, g.Player.X, g.Player.Y, g.Player.Width, g.Player.Height, color.RGBA{255, 255, 255, 255}, true)
 }
@@ -92,14 +123,21 @@ func (g *Game) Init() {
 	g.Ball.Y = float32(SCREEN_HEIGHT) / 2
 	g.Ball.Width = 4.5
 	g.Ball.Height = 4.5
-	g.BallSpeed = 2.5
+	g.Ball.SpeedX = 2.5
+	g.Ball.SpeedY = 0
 	g.IsPlayerTurn = true
 
 	g.Player.X = 294
-	g.Player.Y = 50
+	g.Player.Y = float32(SCREEN_HEIGHT) / 2
 	g.Player.Width = 6
 	g.Player.Height = 30
 	g.Player.Speed = 3.5
+
+	g.Bot.X = 26
+	g.Bot.Y = float32(SCREEN_HEIGHT) / 2
+	g.Bot.Width = 6
+	g.Bot.Height = 30
+	g.Bot.Speed = 3.5
 
 	g.Font = GetFont()
 }

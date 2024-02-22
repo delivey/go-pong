@@ -13,6 +13,8 @@ type Ball struct {
 	Position
 	Width  float32
 	Height float32
+	SpeedX float32
+	SpeedY float32
 }
 
 type Paddle struct {
@@ -36,7 +38,6 @@ type Bot struct {
 type Game struct {
 	Ball         Ball
 	IsPlayerTurn bool
-	BallSpeed    float32
 	Player       Player
 	Bot          Bot
 	Font         font.Face
