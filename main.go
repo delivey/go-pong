@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"image/color"
 	"log"
 
@@ -25,10 +26,17 @@ func (g *Game) HandleBall() {
 		g.Ball.X += g.BallSpeed
 	}
 
-	if g.Ball.X > float32(SCREEN_WIDTH) || g.Ball.X < 0 {
-		g.Ball.X = float32(SCREEN_WIDTH) / 2
+	if g.Ball.X > float32(SCREEN_WIDTH) {
+		g.Player.Score++
 		g.IsPlayerTurn = !g.IsPlayerTurn
+		g.Ball.X = float32(SCREEN_WIDTH) / 2
 	}
+	if g.Ball.X < 0 {
+		g.Bot.Score++
+		g.IsPlayerTurn = !g.IsPlayerTurn
+		g.Ball.X = float32(SCREEN_WIDTH) / 2
+	}
+
 }
 
 func (g *Game) HandlePlayer() {
@@ -56,7 +64,9 @@ func (g *Game) HandleBot() {
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	text.Draw(screen, "Hello, World!", g.Font, 12, 36, color.White)
+	text.Draw(screen, fmt.Sprint(g.Player.Score), g.Font, 106, 36, color.White)
+	text.Draw(screen, fmt.Sprint(g.Bot.Score), g.Font, 208, 36, color.White)
+
 	vector.DrawFilledRect(screen, 20, 50, 6, 30, color.RGBA{255, 255, 255, 255}, true)
 	vector.DrawFilledCircle(screen, g.Ball.X, g.Ball.Y, g.Ball.Radius, color.RGBA{255, 255, 255, 255}, false)
 	vector.DrawFilledRect(screen, g.Player.X, g.Player.Y, g.Player.Width, g.Player.Height, color.RGBA{255, 255, 255, 255}, true)
